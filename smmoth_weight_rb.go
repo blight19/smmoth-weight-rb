@@ -58,6 +58,24 @@ func (r *WeightRoundRobinWithRing) AddNode(node *Node) error {
 	return nil
 }
 
+func (r *WeightRoundRobinWithRing) DelNodeByName(name string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, n := range r.Nodes {
+		if n.Host == name {
+			r.Nodes = append(r.Nodes[:i], r.Nodes[i+1:]...)
+			r.totalWeight -= n.Weight
+			break
+		}
+	}
+	r.rr = ring.New(r.totalWeight)
+	for i := 0; i < r.totalWeight; i++ {
+		n := r.next()
+		r.rr.Value = n
+		r.rr = r.rr.Next()
+	}
+}
+
 func (r *WeightRoundRobinWithRing) DelNode(node *Node) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
